@@ -37,7 +37,7 @@ import CardComponent from '../../components/Card';
 import ModalAddCliente from '../../components/ModalAddCliente';
 import ComboBox from '../../components/ComboBox';
 import * as colors from '../../config/colors';
-import qtdeQuartos, { listTipoQuarto } from '../../config/QtdeQuartos';
+import qtdeQuartos from '../../config/QtdeQuartos';
 import { listTaxaMaquina, listTiposPagamento } from '../../config/pagamento';
 
 import 'moment/locale/pt-br';
@@ -70,6 +70,7 @@ export default function Orcamento({ match }) {
 
   const [listQuartos, setListQuartos] = useState([]);
   const [listClientes, setListCliente] = useState([]);
+  const [listTipoQuarto, setListTipoQuarto] = useState([]);
 
   const [idCliente, setIdCliente] = useState('');
 
@@ -105,6 +106,8 @@ export default function Orcamento({ match }) {
         setValorFinal(valor);
         verificaQuarto();
       }
+      const response = await axios.get('/tipoQuarto');
+      setListTipoQuarto(response.data);
       setIsLoading(false);
     }
     getData();
@@ -182,7 +185,6 @@ export default function Orcamento({ match }) {
     setIsLoading(false);
     setListQuartos(novaList);
   };
-
   const handleClose = () => {
     setShow(false);
     setIsLoading(false);
@@ -246,19 +248,35 @@ export default function Orcamento({ match }) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = axios.post('/orcamento', {
-        n_quarto: numeroQuarto,
-        cliente_id: idCliente,
-        valor: valorFinal,
-        natureza: tipoPagamento,
-        tipo_quarto: tipoQuarto,
-        parcelas: qtdeParcela,
-        disponivel: false,
-        data_entrada: moment(dataInicial).format(),
-        data_saida: moment(dataFinal).format(),
-      });
-      toast.success('Orçamento finalizado com sucesso');
-      console.log(response);
+      if (!id) {
+        const response = axios.post('/orcamento', {
+          n_quarto: numeroQuarto,
+          cliente_id: idCliente,
+          valor: valorFinal,
+          natureza: tipoPagamento,
+          tipo_quarto: tipoQuarto,
+          parcelas: qtdeParcela,
+          disponivel: false,
+          data_entrada: moment(dataInicial).format(),
+          data_saida: moment(dataFinal).format(),
+        });
+        toast.success('Orçamento finalizado com sucesso');
+        console.log(response);
+      } else {
+        const response = axios.put(`/orcamento/${id}`, {
+          n_quarto: numeroQuarto,
+          cliente_id: idCliente,
+          valor: valorFinal,
+          natureza: tipoPagamento,
+          tipo_quarto: tipoQuarto,
+          parcelas: qtdeParcela,
+          disponivel: false,
+          data_entrada: moment(dataInicial).format(),
+          data_saida: moment(dataFinal).format(),
+        });
+        toast.success('Orçamento finalizado com sucesso');
+        console.log(response);
+      }
       setIsLoading(false);
     } catch (err) {
       toast.error('Erro ao fazer o orçamento');
@@ -301,6 +319,15 @@ export default function Orcamento({ match }) {
       console.log(e);
     }
   };
+  const handleTipoQuarto = (e) => {
+    const tipo = e.target.value;
+    listTipoQuarto.map((dado) => {
+      if (tipo === dado.descricao) {
+        setValorDiaria(dado.valor);
+      }
+    });
+    setTipoQuarto(tipo);
+  };
   return (
     <Container>
       <Loading isLoading={isLoading} />
@@ -325,7 +352,7 @@ export default function Orcamento({ match }) {
         handleIdCliente={handleIdCliente}
       />
       <Header>
-        <h1>Orcamento</h1>
+        <h1>Orçamento</h1>
         <Button variant="success" onClick={visualizarImpressao}>
           <AiFillPrinter size={40} />
         </Button>
@@ -447,23 +474,25 @@ export default function Orcamento({ match }) {
         </Row>
         <Row>
           <Col sm={12} md={3} className="my-1">
+            <Label htmlFor="congregacao">
+              Selecione o mês
+              <select onChange={handleTipoQuarto} value={tipoQuarto}>
+                <option value="nada">Selecione o mês</option>
+                {listTipoQuarto.map((dado) => (
+                  <option key={dado.id} value={dado.descricao}>
+                    {dado.descricao}
+                  </option>
+                ))}
+              </select>
+            </Label>
+          </Col>
+          <Col sm={12} md={3} className="my-1">
             <Form.Label htmlFor="Valor">Valor do diária</Form.Label>
             <Form.Control
               type="number"
               value={valorDiaria}
               onChange={(e) => {
                 setValorDiaria(e.target.value);
-              }}
-            />
-          </Col>
-          <Col sm={12} md={3} className="my-1">
-            <ComboBox
-              title="Tipo de Quarto"
-              list={listTipoQuarto}
-              text="Selecione o estado civil"
-              value={tipoQuarto}
-              onChange={(e) => {
-                setTipoQuarto(e.target.value);
               }}
             />
           </Col>

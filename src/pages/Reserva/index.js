@@ -24,7 +24,7 @@ import ModalAddCliente from '../../components/ModalAddCliente';
 import ModalBuscaCliente from '../../components/ModalBuscaCliente';
 import ComboBox from '../../components/ComboBox';
 import * as colors from '../../config/colors';
-import qtdeQuartos, { listTipoQuarto } from '../../config/QtdeQuartos';
+import qtdeQuartos from '../../config/QtdeQuartos';
 import { listTaxaMaquina, listTiposPagamento } from '../../config/pagamento';
 import 'moment/locale/pt-br';
 
@@ -54,10 +54,15 @@ export default function Reserva() {
 
   const [listQuartos, setListQuartos] = useState([]);
   const [listClientes, setListCliente] = useState([]);
+  const [listTipoQuarto, setListTipoQuarto] = useState([]);
 
   useEffect(() => {
     async function getData() {
+      setIsLoading(true);
       setListQuartos(qtdeQuartos);
+      const response = await axios.get('/tipoQuarto');
+      setListTipoQuarto(response.data);
+      setIsLoading(false);
     }
     getData();
   }, []);
