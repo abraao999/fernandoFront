@@ -99,6 +99,26 @@ export const SidebarData = [
       },
     ],
   },
+  {
+    title: 'Configurações',
+    path: '#',
+    icon: <AiIcons.AiFillSetting />,
+    iconClosed: <RiIcons.RiArrowDownCircleLine />,
+    iconOpened: <RiIcons.RiArrowDownCircleLine />,
+
+    subNav: [
+      {
+        title: 'Configuração de Quartos',
+        path: '/tipoQuarto',
+        icon: <AiIcons.AiFillSetting />,
+      },
+      {
+        title: 'Consumo',
+        path: '/consumo',
+        icon: <FaIcons.FaCartPlus />,
+      },
+    ],
+  },
 
   {
     title: 'Support',

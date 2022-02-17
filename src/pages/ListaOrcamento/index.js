@@ -8,6 +8,7 @@ import moment from 'moment';
 import 'moment/locale/pt-br';
 import { toast } from 'react-toastify';
 import { FaPlus, FaSearch } from 'react-icons/fa';
+import { AiTwotoneEdit } from 'react-icons/ai';
 
 import { useSelector } from 'react-redux';
 import { Button, Col, Form, Row, Table } from 'react-bootstrap';
@@ -160,7 +161,7 @@ export default function ListaOrcamento() {
       />
       <ModalComponent
         title="Alerta"
-        text="Deseja realmente excluir essa reserva?"
+        text="Deseja efetivar essa reserva?"
         handleClose={() => setShowModal(false)}
         show={showModal}
         buttonCancel="Não"
@@ -217,6 +218,7 @@ export default function ListaOrcamento() {
                 <th scope="col">Data de Saida</th>
                 <th scope="col">Valor</th>
                 <th scope="col">Reservar</th>
+                <th scope="col">Editar</th>
 
                 {/* <th scope="col">Excluir</th> */}
               </tr>
@@ -238,6 +240,17 @@ export default function ListaOrcamento() {
                       }}
                     >
                       <FaPlus size={16} />
+                    </Button>
+                  </td>
+                  <td>
+                    <Button
+                      variant="warning"
+                      type="button"
+                      onClick={(e) => {
+                        history.push(`/orcamento/${dado.id}`);
+                      }}
+                    >
+                      <AiTwotoneEdit size={16} />
                     </Button>
                   </td>
                 </tr>

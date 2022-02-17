@@ -1,8 +1,10 @@
+/* eslint-disable camelcase */
 /* eslint-disable no-unused-expressions */
 /* eslint-disable no-use-before-define */
 /* eslint-disable array-callback-return */
 import React, { useEffect, useState } from 'react';
 import { AiFillPrinter } from 'react-icons/ai';
+import PropTypes from 'prop-types';
 
 import { toast } from 'react-toastify';
 import {
@@ -41,7 +43,9 @@ import { listTaxaMaquina, listTiposPagamento } from '../../config/pagamento';
 import 'moment/locale/pt-br';
 import ModalBuscaCliente from '../../components/ModalBuscaCliente';
 
-export default function Orcamento() {
+export default function Orcamento({ match }) {
+  const id = get(match, 'params.id', '');
+
   const [show, setShow] = useState(false);
   const [showCliente, setShowCliente] = useState(false);
 
@@ -73,7 +77,34 @@ export default function Orcamento() {
     async function getData() {
       setIsLoading(true);
       setListQuartos(qtdeQuartos);
+      if (id) {
+        const response = await axios.get(`/orcamento/${id}`);
+        console.log(response.data);
+        const {
+          cliente_id,
+          n_quarto,
+          data_entrada,
+          data_saida,
+          natureza,
+          tipo_quarto,
+          parcelas,
+          valor,
+        } = response.data;
+        const response2 = await axios.get(`/cliente/${cliente_id}`);
 
+        setHiddenParcelas(false);
+        setHiddenForm(false);
+        setIdCliente(cliente_id);
+        setNomeCliente(response2.data.nome);
+        setNumeroQuarto(n_quarto);
+        setDataInicial(data_entrada);
+        setDataFinal(data_saida);
+        setTipoPagamento(natureza);
+        setTipoQuarto(tipo_quarto);
+        setQtdeParcelas(parcelas);
+        setValorFinal(valor);
+        verificaQuarto();
+      }
       setIsLoading(false);
     }
     getData();
@@ -83,7 +114,31 @@ export default function Orcamento() {
     const documento = await classeImpressao.PreparaDocumento();
     pdfMake.createPdf(documento).open({}, window.open('', '_blank'));
   };
-
+  const verificaQuarto = async () => {
+    let aux = {};
+    let oculpado = false;
+    setIsLoading(true);
+    try {
+      const responseOrcamento = await axios.get('/orcamento');
+      responseOrcamento.data.map((valor) => {
+        if (valor.id === id) aux = valor;
+      });
+      const response = await axios.get('/reserva');
+      response.data.map((valor) => {
+        if (moment(aux.data_entrada).isSame(valor.data_entrada)) {
+          console.log(valor);
+          oculpado = true;
+        }
+      });
+      if (oculpado) {
+        toast.warn('O quarto não está mais disponivel, verifique outro quarto');
+        handleSubmit();
+        setHidden(false);
+      }
+    } catch (e) {
+      toast.error('Erro ao efetivar a reserva');
+    }
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -171,11 +226,9 @@ export default function Orcamento() {
     const di = new Date(dataInicial);
     const df = new Date(dataFinal);
     diarias = df.getDate() - di.getDate();
-    if (tipoPagamento === 'Parcelado') {
-      valor = valorDiaria * diarias + valorDiaria * diarias * taxaMaquina;
-    } else {
-      valor = valorDiaria * diarias;
-    }
+
+    valor = valorDiaria * diarias;
+
     setValorFinal(valor);
     console.log(diarias);
   };
@@ -487,3 +540,6 @@ export default function Orcamento() {
     </Container>
   );
 }
+Orcamento.protoTypes = {
+  match: PropTypes.shape({}).isRequired,
+};

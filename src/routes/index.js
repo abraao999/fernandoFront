@@ -58,6 +58,7 @@ import DetailReserva from '../pages/DetailReserva';
 import ListaCliente from '../pages/ListaClientes';
 import Estoque from '../pages/Estoque';
 import Consumo from '../pages/Consumo';
+import TipoQuarto from '../pages/TipoQuarto';
 
 export default function Routes() {
   const idFuncao = useSelector((state) => state.auth.user.function_id);
@@ -80,12 +81,15 @@ export default function Routes() {
 
       <MyRoute path="/cadCliente/:id" component={CadCliente} isClosed={false} />
       <MyRoute path="/cadCliente" component={CadCliente} isClosed={false} />
+      <MyRoute path="/orcamento/:id" component={Orcamento} isClosed={false} />
       <MyRoute path="/orcamento" component={Orcamento} isClosed={false} />
       <MyRoute
         path="/listaOrcamento"
         component={ListaOrcamento}
         isClosed={false}
       />
+      <MyRoute path="/tipoQuarto/:id" component={TipoQuarto} isClosed={false} />
+      <MyRoute path="/tipoQuarto" component={TipoQuarto} isClosed={false} />
       <MyRoute
         path="/listaReservas"
         component={ListaReservas}

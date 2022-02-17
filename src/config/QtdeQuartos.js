@@ -86,7 +86,6 @@ const qtdeQuartos = [
 ];
 export default qtdeQuartos;
 export const listTipoQuarto = [
-  { id: 0, descricao: 'Simples' },
   { id: 1, descricao: 'Duplo' },
   { id: 2, descricao: 'Triplo' },
   { id: 3, descricao: 'Quáduplo' },

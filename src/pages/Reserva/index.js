@@ -154,11 +154,9 @@ export default function Reserva() {
     const di = new Date(dataInicial);
     const df = new Date(dataFinal);
     diarias = df.getDate() - di.getDate();
-    if (tipoPagamento === 'Parcelado') {
-      valor = valorDiaria * diarias + valorDiaria * diarias * taxaMaquina;
-    } else {
-      valor = valorDiaria * diarias;
-    }
+
+    valor = valorDiaria * diarias;
+
     setValorFinal(valor);
     console.log(diarias);
   };
