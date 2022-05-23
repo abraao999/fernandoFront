@@ -1,3 +1,6 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
+/* eslint-disable radix */
+/* eslint-disable no-plusplus */
 /* eslint-disable camelcase */
 /* eslint-disable no-unused-expressions */
 /* eslint-disable no-use-before-define */
@@ -21,33 +24,30 @@ import { Link } from 'react-router-dom';
 import { Button, Col, Form, Row, Table } from 'react-bootstrap';
 import moment from 'moment';
 import { Container } from '../../styles/GlobalStyles';
-import { Header, Label, Listagem } from './styled';
+import { Header, Label, Listagem, Topo } from './styled';
 import axios from '../../services/axios';
 import Loading from '../../components/Loading';
 import history from '../../services/history';
 import { Impressao } from '../../printers/impRelatorioDizimoGeral';
-import {
-  formataDataInput,
-  getDataBanco,
-  getDataDB,
-  getDay,
-  getMes,
-} from '../../util';
+import { getDataBanco } from '../../util';
 import CardComponent from '../../components/Card';
 import ModalAddCliente from '../../components/ModalAddCliente';
 import ComboBox from '../../components/ComboBox';
 import * as colors from '../../config/colors';
-import qtdeQuartos from '../../config/QtdeQuartos';
+import qtdeQuartos, { adultos, crianca } from '../../config/QtdeQuartos';
 import { listTaxaMaquina, listTiposPagamento } from '../../config/pagamento';
 
 import 'moment/locale/pt-br';
 import ModalBuscaCliente from '../../components/ModalBuscaCliente';
+import ModalCrianca from '../../components/ModalCrianca';
+import CardDetailQuarto from '../../components/CardDetailQuarto';
 
 export default function Orcamento({ match }) {
   const id = get(match, 'params.id', '');
 
   const [show, setShow] = useState(false);
   const [showCliente, setShowCliente] = useState(false);
+  const [showCrianca, setShowCrianca] = useState(false);
 
   const [dataInicial, setDataInicial] = useState('');
   const [dataFinal, setDataFinal] = useState('');
@@ -61,6 +61,7 @@ export default function Orcamento({ match }) {
   const [qtdeParcela, setQtdeParcelas] = useState('');
   const [taxaMaquina, setTaxaMaquina] = useState('');
   const [numeroQuarto, setNumeroQuarto] = useState('');
+  const [qtdeAdultos, setQtdeAdultos] = useState('');
 
   const [listMovimentacao, setListMovimentacao] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,12 +69,30 @@ export default function Orcamento({ match }) {
   const [hiddenParcelas, setHiddenParcelas] = useState(true);
   const [hiddenForm, setHiddenForm] = useState(true);
 
+  const [quantidadeFilhos, setQuantidadeFilhos] = useState([]);
   const [listQuartos, setListQuartos] = useState([]);
   const [listClientes, setListCliente] = useState([]);
   const [listTipoQuarto, setListTipoQuarto] = useState([]);
+  const [idadeFilhos, setIdadeFilhos] = useState([]);
+  const [listQtdeQuartosOrcamento, setListQtdeQuartosOrcamento] = useState([]);
+  const [listAdultos, setListAdultos] = useState(adultos);
+  const [listCriancas, setListCriancas] = useState(crianca);
 
   const [idCliente, setIdCliente] = useState('');
-
+  const [qtdeQuartosOrcamento, setQtdeQuartosOrcamento] = useState('');
+  const quartos = [
+    { id: 1, descricao: 1 },
+    { id: 2, descricao: 2 },
+    { id: 3, descricao: 3 },
+    { id: 4, descricao: 4 },
+    { id: 5, descricao: 5 },
+    { id: 6, descricao: 6 },
+    { id: 7, descricao: 7 },
+    { id: 9, descricao: 9 },
+    { id: 10, descricao: 10 },
+    { id: 11, descricao: 11 },
+    { id: 12, descricao: 12 },
+  ];
   useEffect(() => {
     async function getData() {
       setIsLoading(true);
@@ -328,10 +347,86 @@ export default function Orcamento({ match }) {
     });
     setTipoQuarto(tipo);
   };
+  const handleQtdeCrianca = (qtde, nQuarto) => {
+    const qtc = [];
+    for (let index = 0; index < qtde; index++) {
+      qtc.push({
+        id: index,
+        descricao: `${index}`,
+        idade: '',
+        quarto: nQuarto,
+      });
+    }
+    setShowCrianca(true);
+    setQuantidadeFilhos(qtc);
+  };
+  const handleIdadeCrianca = (e, quarto) => {
+    const aux = [];
+    console.log(quarto);
+    quantidadeFilhos.map((dado, index) => {
+      if (dado.id === quarto.id)
+        aux[index] = { ...quarto, idade: e.target.value };
+      else aux.push(dado);
+    });
+    console.log(aux);
+    setQuantidadeFilhos(aux);
+  };
+  const handleSelectQtdeQuartosOrcamento = (e) => {
+    setQtdeQuartosOrcamento(e.target.value);
+    const qtde = parseInt(e.target.value);
+    const aux = [];
+    for (let index = 0; index < qtde; index++) {
+      aux.push({
+        id: index,
+        descricao: index + 1,
+        adulto: '',
+        crianca: '',
+        idade: '',
+        checked: false,
+      });
+    }
+    setListQtdeQuartosOrcamento(aux);
+  };
+  const handleAlteraValorComboboxAdultos = (e, quarto) => {
+    const aux = [];
+    console.log(quarto);
+    listQtdeQuartosOrcamento.map((dado, index) => {
+      if (dado.id === quarto.id)
+        aux[index] = { ...quarto, adulto: e.target.value };
+      else aux.push(dado);
+    });
+    console.log(aux);
+    setListQtdeQuartosOrcamento(aux);
+  };
+  const handleAlteraValorComboboxCrianca = (e, quarto) => {
+    const aux = [];
+    console.log(quarto);
+    listQtdeQuartosOrcamento.map((dado, index) => {
+      if (dado.id === quarto.id)
+        aux[index] = { ...quarto, crianca: e.target.value };
+      else aux.push(dado);
+    });
+    console.log(aux);
+    setShowCrianca(true);
+    handleQtdeCrianca(e.target.value, quarto.id);
+    setListQtdeQuartosOrcamento(aux);
+  };
+  const handleDetailQuarto = (quarto) => {};
   return (
     <Container>
       <Loading isLoading={isLoading} />
 
+      <ModalCrianca
+        title="Selecione a(s) idade(s) da(s) criança(s)"
+        list={quantidadeFilhos}
+        show={showCrianca}
+        idadeFilhos
+        handleIdadeCrianca={handleIdadeCrianca}
+        handleClose={() => setShowCrianca(false)}
+        handleConfirm
+        buttonCancel="Cancelar"
+        buttonConfirm="Confirmar"
+      />
       <ModalAddCliente
         title="Cadastro Parcial"
         handleClose={handleClose}
@@ -357,9 +452,9 @@ export default function Orcamento({ match }) {
           <AiFillPrinter size={40} />
         </Button>
       </Header>
-      <Form onSubmit={handleSubmit}>
+      <Form>
         <Row>
-          <Col sm={12} md={4} className="my-1">
+          <Col sm={12} md={3} className="my-1">
             <Form.Label htmlFor="dataInicial">Data Inicial</Form.Label>
             <Form.Control
               type="date"
@@ -369,7 +464,7 @@ export default function Orcamento({ match }) {
               }}
             />
           </Col>
-          <Col sm={12} md={4} className="my-1">
+          <Col sm={12} md={3} className="my-1">
             <Form.Label htmlFor="dataInicial">Data Final</Form.Label>
             <Form.Control
               type="date"
@@ -379,19 +474,77 @@ export default function Orcamento({ match }) {
               }}
             />
           </Col>
+          <Col sm={12} md={3} className="my-1">
+            <ComboBox
+              value={qtdeQuartosOrcamento}
+              onChange={handleSelectQtdeQuartosOrcamento}
+              title="Quantidade de Quartos"
+              list={quartos}
+            />
+          </Col>
           <Col
             style={{
               display: 'flex',
               alignItems: 'flex-end',
               marginBottom: '3px',
             }}
-          >
-            <Button variant="success" type="submit">
-              Velificar disponibilidade <FaSearch />
-            </Button>
-          </Col>
+            sm={12}
+            md={3}
+          />
         </Row>
       </Form>
+      <Form onSubmit={handleSubmit}>
+        {listQtdeQuartosOrcamento.map((dado) => (
+          <Row key={dado.id}>
+            <strong>Quarto {dado.descricao}</strong>
+            <Col sm={12} md={2} className="my-1">
+              <Label htmlFor="congregacao">
+                Aldultos
+                <select
+                  onChange={(e) => handleAlteraValorComboboxAdultos(e, dado)}
+                  value={dado.adulto}
+                >
+                  <option value="">-</option>
+                  {listAdultos.map((ad, index) => (
+                    <option key={ad.id} value={ad.descricao}>
+                      {ad.descricao}
+                    </option>
+                  ))}
+                </select>
+              </Label>
+            </Col>
+            <Col sm={12} md={2} className="my-1">
+              <Label htmlFor="congregacao">
+                Crianças
+                <select
+                  onChange={(e) => handleAlteraValorComboboxCrianca(e, dado)}
+                  value={dado.crianca}
+                >
+                  <option value="">-</option>
+                  {listCriancas.map((ad, index) => (
+                    <option key={ad.id} value={ad.descricao}>
+                      {ad.descricao}
+                    </option>
+                  ))}
+                </select>
+              </Label>
+            </Col>
+          </Row>
+        ))}
+        <Col
+          style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            marginBottom: '3px',
+          }}
+        >
+          <Button variant="success" type="submit">
+            Velificar disponibilidade <FaSearch />
+          </Button>
+        </Col>
+      </Form>
+
+      <CardDetailQuarto list={listQtdeQuartosOrcamento} />
       <Row hidden={hidden}>
         <h3>Quartos Disponíveis</h3>
         {listQuartos.map((dado) => (

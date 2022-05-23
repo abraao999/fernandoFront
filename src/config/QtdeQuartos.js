@@ -84,4 +84,15 @@ const qtdeQuartos = [
     cliente: '',
   },
 ];
+export const adultos = [
+  { id: 1, descricao: '1' },
+  { id: 2, descricao: '2' },
+  { id: 3, descricao: '3' },
+  { id: 4, descricao: '4' },
+];
+export const crianca = [
+  { id: 1, descricao: '1' },
+  { id: 2, descricao: '2' },
+  { id: 3, descricao: '3' },
+];
 export default qtdeQuartos;

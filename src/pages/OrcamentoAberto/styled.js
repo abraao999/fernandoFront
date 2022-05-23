@@ -103,3 +103,46 @@ export const Label = styled.label`
     }
   }
 `;
+export const CardBox = styled.section`
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  margin-top: 5px;
+
+  padding: 30px;
+`;
+export const CardHeader = styled.span`
+  flex: 1;
+  margin-bottom: 10px;
+  font-size: 26px;
+  font-weight: bold;
+`;
+export const CardBody = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+export const CardDados = styled.div`
+  flex: 3;
+  display: flex;
+  flex-direction: row;
+`;
+export const CardButton = styled.div`
+  flex: 1;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-direction: column;
+`;
+export const TextBold = styled.span`
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 18px;
+  span {
+    font-weight: normal;
+    margin: 3px;
+  }
+  button {
+    margin: 5px;
+  }
+`;

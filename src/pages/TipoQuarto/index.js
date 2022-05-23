@@ -25,6 +25,7 @@ export default function TipoQuarto({ match }) {
   const [valor, setValor] = useState('');
 
   const [descricao, setDescricao] = useState('');
+  const [nome, setNome] = useState('');
   const [descricaoList, setDescricaoList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -53,10 +54,15 @@ export default function TipoQuarto({ match }) {
     if (formErrors) return;
     try {
       if (!id) {
-        const response = await axios.post('/tipoQuarto', { descricao, valor });
+        const response = await axios.post('/tipoQuarto', {
+          nome,
+          descricao,
+          valor,
+        });
         console.log(response);
         const novaLista = await axios.get('/tipoQuarto');
         setDescricaoList(novaLista.data);
+        setNome('');
         setDescricao('');
         setValor('');
         toast.success('Tipo de quarto criada com sucesso');
@@ -64,12 +70,14 @@ export default function TipoQuarto({ match }) {
         setIsLoading(false);
       } else {
         const response = await axios.put(`/tipoQuarto/${id}`, {
+          nome,
           descricao,
           valor,
         });
         console.log(response);
         const novaLista = await axios.get('/tipoQuarto');
         setDescricaoList(novaLista.data);
+        setNome('');
         setDescricao('');
         setValor('');
         toast.success('Tipo de quarto editado com sucesso');
@@ -133,23 +141,35 @@ export default function TipoQuarto({ match }) {
       <Form onSubmit={handleSubmit}>
         <Row>
           <Col sm={12} md={4} className="my-1">
-            <Form.Label htmlFor="descricao">Nome da cargo:</Form.Label>
+            <Form.Label htmlFor="descricao">Nome da quarto:</Form.Label>
 
             <Form.Control
               type="text"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
               placeholder="Descrição"
             />
           </Col>
           <Col sm={12} md={4} className="my-1">
-            <Form.Label htmlFor="descricao">Nome da cargo:</Form.Label>
+            <Form.Label htmlFor="descricao">Valor do Quarto:</Form.Label>
 
             <Form.Control
               type="number"
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               placeholder="valor"
+            />
+          </Col>
+        </Row>
+        <Row>
+          <Col sm={12} md={8} className="my-1">
+            <Form.Label htmlFor="descricao">Nome da cargo:</Form.Label>
+
+            <Form.Control
+              as="textarea"
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              placeholder="Descrição"
             />
           </Col>
           <Col
@@ -161,7 +181,9 @@ export default function TipoQuarto({ match }) {
               alignItems: 'flex-end',
             }}
           >
-            <button type="submit">Salvar</button>
+            <Button variant="success" type="submit">
+              Salvar
+            </Button>
           </Col>
         </Row>
       </Form>
@@ -177,8 +199,9 @@ export default function TipoQuarto({ match }) {
           >
             <thead>
               <tr>
-                <th scope="col">Descição</th>
+                <th scope="col">Nome</th>
                 <th scope="col">Valor</th>
+                <th scope="col">Descrição</th>
                 <th scope="col">Alterar</th>
                 <th scope="col">Excluir</th>
               </tr>
@@ -186,8 +209,9 @@ export default function TipoQuarto({ match }) {
             <tbody>
               {descricaoList.map((dado, index) => (
                 <tr key={String(dado.id)}>
-                  <td>{dado.descricao}</td>
+                  <td>{dado.nome}</td>
                   <td>{dado.valor}</td>
+                  <td>{dado.descricao}</td>
                   <td>
                     <Button
                       variant="warning"

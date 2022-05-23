@@ -6,9 +6,10 @@ import { Button, Form, Modal } from 'react-bootstrap';
 import InputMask from 'react-input-mask';
 import * as colors from '../../config/colors';
 import { CancelarButton, Label } from './styled';
+import Loading from '../Loading';
 
 // eslint-disable-next-line react/prop-types
-export default function ModalAddCliente({
+export default function ModalDadosClientePreserva({
   title,
   nomeCliente,
   celular,
@@ -21,6 +22,7 @@ export default function ModalAddCliente({
   onChangeNome,
   onChangeCelular,
   onChangeEmail,
+  disabledButton,
 }) {
   return (
     <>
@@ -70,6 +72,7 @@ export default function ModalAddCliente({
             type="submit"
             variant="success"
             onClick={handleFunctionConfirm}
+            disabled={disabledButton}
           >
             {buttonConfirm}
           </Button>
@@ -79,19 +82,30 @@ export default function ModalAddCliente({
   );
 }
 
-ModalAddCliente.defaultProps = {
+ModalDadosClientePreserva.defaultProps = {
   title: '',
   text: '',
   buttonCancel: '',
   buttonConfirm: '',
   show: false,
+  disabledButton: false,
+  nomeCliente: '',
+  celular: '',
+  email: '',
 };
-ModalAddCliente.protoTypes = {
+ModalDadosClientePreserva.protoTypes = {
   nome: PropTypes.string,
   text: PropTypes.string,
   buttonConfirm: PropTypes.string,
   buttonCancel: PropTypes.string,
   show: PropTypes.bool,
+  disabledButton: PropTypes.bool,
   handleClose: PropTypes.func,
   handleFunctionConfirm: PropTypes.func,
+  onChangeNome: PropTypes.func,
+  onChangeCelular: PropTypes.func,
+  onChangeEmail: PropTypes.func,
+  nomeCliente: PropTypes.string,
+  celular: PropTypes.string,
+  email: PropTypes.string,
 };
