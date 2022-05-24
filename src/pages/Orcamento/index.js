@@ -1,3 +1,5 @@
+/* eslint-disable react/no-array-index-key */
+/* eslint-disable no-param-reassign */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 /* eslint-disable radix */
 /* eslint-disable no-plusplus */
@@ -6,68 +8,72 @@
 /* eslint-disable no-use-before-define */
 /* eslint-disable array-callback-return */
 import React, { useEffect, useState } from 'react';
-import { AiFillPrinter } from 'react-icons/ai';
 import PropTypes from 'prop-types';
 
 import { toast } from 'react-toastify';
-import {
-  FaEdit,
-  FaWindowClose,
-  FaSearch,
-  FaCalculator,
-  FaPlus,
-} from 'react-icons/fa';
-import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
+import { FaSearch } from 'react-icons/fa';
+
 import { get } from 'lodash';
 import { Link } from 'react-router-dom';
-import { Button, Col, Form, Row, Table } from 'react-bootstrap';
+import { Button, Col, Form, Row } from 'react-bootstrap';
 import moment from 'moment';
 import { Container } from '../../styles/GlobalStyles';
-import { Header, Label, Listagem, Topo } from './styled';
+import {
+  CardBody,
+  CardBox,
+  CardDados,
+  CardHeader,
+  Header,
+  Label,
+  Listagem,
+  TextBold,
+} from './styled';
 import axios from '../../services/axios';
 import Loading from '../../components/Loading';
 import history from '../../services/history';
-import { Impressao } from '../../printers/impRelatorioDizimoGeral';
-import { getDataBanco } from '../../util';
 import CardComponent from '../../components/Card';
 import ModalAddCliente from '../../components/ModalAddCliente';
 import ComboBox from '../../components/ComboBox';
 import * as colors from '../../config/colors';
 import qtdeQuartos, { adultos, crianca } from '../../config/QtdeQuartos';
-import { listTaxaMaquina, listTiposPagamento } from '../../config/pagamento';
 
 import 'moment/locale/pt-br';
 import ModalBuscaCliente from '../../components/ModalBuscaCliente';
 import ModalCrianca from '../../components/ModalCrianca';
 import CardDetailQuarto from '../../components/CardDetailQuarto';
+import ModalDadosClientePreserva from '../../components/ModalDadosClientePreserva';
 
-export default function Orcamento({ match }) {
-  const id = get(match, 'params.id', '');
-
+export default function Orcamento() {
   const [show, setShow] = useState(false);
   const [showCliente, setShowCliente] = useState(false);
   const [showCrianca, setShowCrianca] = useState(false);
+  const [
+    showModalDadosClientePreserva,
+    setShowModalDadosClientePreserva,
+  ] = useState(false);
 
   const [dataInicial, setDataInicial] = useState('');
   const [dataFinal, setDataFinal] = useState('');
   const [nomeCliente, setNomeCliente] = useState('');
   const [celular, setCelular] = useState('');
   const [email, setEmail] = useState('');
-  const [valorDiaria, setValorDiaria] = useState('');
   const [tipoQuarto, setTipoQuarto] = useState('');
-  const [tipoPagamento, setTipoPagamento] = useState('');
-  const [valorFinal, setValorFinal] = useState('');
-  const [qtdeParcela, setQtdeParcelas] = useState('');
-  const [taxaMaquina, setTaxaMaquina] = useState('');
-  const [numeroQuarto, setNumeroQuarto] = useState('');
-  const [qtdeAdultos, setQtdeAdultos] = useState('');
-
+  const [valorFinal, setValorFinal] = useState(0);
   const [listMovimentacao, setListMovimentacao] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingModal, setIsLoadingModal] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const [hidden, setHidden] = useState(true);
-  const [hiddenParcelas, setHiddenParcelas] = useState(true);
-  const [hiddenForm, setHiddenForm] = useState(true);
+  const [hiddenResumoFinal, setHiddenResumoFinal] = useState(true);
+  const [hiddenTotal, setHiddenTotal] = useState(false);
+  const [
+    hiddenButtonGrupSelectQuartoDetail,
+    setHiddenButtonGrupSelectQuartoDetail,
+  ] = useState(true);
+  const [hiddenFormSelecaoPessoas, setHiddenFormSelecaoPessoas] = useState(
+    true
+  );
+  const [disabledButton, setDisabledButton] = useState(false);
 
   const [quantidadeFilhos, setQuantidadeFilhos] = useState([]);
   const [listQuartos, setListQuartos] = useState([]);
@@ -77,9 +83,13 @@ export default function Orcamento({ match }) {
   const [listQtdeQuartosOrcamento, setListQtdeQuartosOrcamento] = useState([]);
   const [listAdultos, setListAdultos] = useState(adultos);
   const [listCriancas, setListCriancas] = useState(crianca);
-
-  const [idCliente, setIdCliente] = useState('');
+  const [showCardDetailQuarto, setShowCardDetailQuarto] = useState([]);
+  const [listQuartosEscolhidos, setListQuartosEscolhidos] = useState([]);
   const [qtdeQuartosOrcamento, setQtdeQuartosOrcamento] = useState('');
+  const [quartoDetail, setQuartoDetail] = useState('');
+  const [adultoDetail, setAdultoDetail] = useState('');
+  const [criancaDetail, setCriancaDetail] = useState('');
+  const [descricao, setDescricao] = useState('');
   const quartos = [
     { id: 1, descricao: 1 },
     { id: 2, descricao: 2 },
@@ -93,80 +103,30 @@ export default function Orcamento({ match }) {
     { id: 11, descricao: 11 },
     { id: 12, descricao: 12 },
   ];
+  const [radioValue, setRadioValue] = useState('');
   useEffect(() => {
     async function getData() {
       setIsLoading(true);
       setListQuartos(qtdeQuartos);
-      if (id) {
-        const response = await axios.get(`/orcamento/${id}`);
-        console.log(response.data);
-        const {
-          cliente_id,
-          n_quarto,
-          data_entrada,
-          data_saida,
-          natureza,
-          tipo_quarto,
-          parcelas,
-          valor,
-        } = response.data;
-        const response2 = await axios.get(`/cliente/${cliente_id}`);
 
-        setHiddenParcelas(false);
-        setHiddenForm(false);
-        setIdCliente(cliente_id);
-        setNomeCliente(response2.data.nome);
-        setNumeroQuarto(n_quarto);
-        setDataInicial(data_entrada);
-        setDataFinal(data_saida);
-        setTipoPagamento(natureza);
-        setTipoQuarto(tipo_quarto);
-        setQtdeParcelas(parcelas);
-        setValorFinal(valor);
-        verificaQuarto();
-      }
       const response = await axios.get('/tipoQuarto');
       setListTipoQuarto(response.data);
       setIsLoading(false);
     }
     getData();
   }, []);
-  const visualizarImpressao = async () => {
-    const classeImpressao = new Impressao(listMovimentacao);
-    const documento = await classeImpressao.PreparaDocumento();
-    pdfMake.createPdf(documento).open({}, window.open('', '_blank'));
-  };
-  const verificaQuarto = async () => {
-    let aux = {};
-    let oculpado = false;
-    setIsLoading(true);
-    try {
-      const responseOrcamento = await axios.get('/orcamento');
-      responseOrcamento.data.map((valor) => {
-        if (valor.id === id) aux = valor;
-      });
-      const response = await axios.get('/reserva');
-      response.data.map((valor) => {
-        if (moment(aux.data_entrada).isSame(valor.data_entrada)) {
-          console.log(valor);
-          oculpado = true;
-        }
-      });
-      if (oculpado) {
-        toast.warn('O quarto não está mais disponivel, verifique outro quarto');
-        handleSubmit();
-        setHidden(false);
-      }
-    } catch (e) {
-      toast.error('Erro ao efetivar a reserva');
-    }
-  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     const novaList = [];
+    const listaReserva = [];
     const response = await axios.get('/reserva');
-    if (dataInicial && dataFinal && dataInicial < dataFinal) {
+    if (
+      dataInicial &&
+      dataFinal &&
+      dataInicial < dataFinal &&
+      qtdeQuartosOrcamento
+    ) {
       setHidden(false);
 
       qtdeQuartos.map((quarto) => {
@@ -196,8 +156,23 @@ export default function Orcamento({ match }) {
             valor = reserva;
           }
         });
-        novaList.push(valor || quarto);
+        novaList.push(quarto);
       });
+      if (qtdeQuartosOrcamento <= novaList.length) {
+        for (let index = 0; index < qtdeQuartosOrcamento; index++) {
+          listaReserva.push({
+            ...novaList[index],
+            ...listQtdeQuartosOrcamento[index],
+            data_entrada: dataInicial,
+            data_saida: dataFinal,
+            value: index.toString(),
+            name: index + 1,
+          });
+        }
+      }
+      setHiddenButtonGrupSelectQuartoDetail(false);
+      setListQtdeQuartosOrcamento(listaReserva);
+      console.log(listaReserva);
     } else {
       toast.error('Escolha as datas de entrada e saída');
     }
@@ -208,18 +183,76 @@ export default function Orcamento({ match }) {
     setShow(false);
     setIsLoading(false);
   };
-  const handleFunctionConfirm = async () => {
-    try {
-      const response = await axios.post(`/cliente`, {
-        nome: nomeCliente,
-        data_nascimento: null,
-        celular,
-        email,
-      });
-      console.log(response);
-      toast.success('Cliente adicionado com sucesso');
+  const handleOnChangeNome = (e) => {
+    setNomeCliente(e.target.value);
+  };
+  const handleOnChangeCelular = (e) => {
+    setCelular(e.target.value);
+  };
+  const handleOnChangeEmail = (e) => {
+    setEmail(e.target.value);
+  };
+  const handleCalcularReserva = (valor) => {
+    let diarias = 0;
+    const di = new Date(dataInicial);
+    const df = new Date(dataFinal);
+    diarias = df.getDate() - di.getDate();
 
-      // history.push('/listMembros');
+    valor *= diarias;
+
+    return valor;
+  };
+  const handleFinalizarOrcamento = async () => {
+    setHiddenTotal(true);
+    setDisabledButton(true);
+
+    toast.warning('Enviando Pedido');
+
+    let bodyHtml = '';
+    listQuartosEscolhidos.map((dado, index) => {
+      bodyHtml += `
+      <div>
+      <p><strong>Quarto: </strong><span>${index + 1}</span></p>
+      <p><strong>Tipo quanto: </strong><span>${dado.tipo}</span></p>
+      <p><strong>Adultos: </strong><span>${dado.adulto}</span></p>
+      <p><strong>Criança: </strong><span>${dado.crianca}</span></p>
+      <p><strong>Valor: </strong><span>${dado.valorReserva}</span></p>
+      <br/>
+      </div>`;
+    });
+    bodyHtml += `
+    <div>
+    <p><strong>Nome Cliente: </strong><span>${nomeCliente}</span></p>
+    <p><strong>Telefone: </strong><span>${celular}</span></p>
+    <p><strong>E-mail: </strong><span>${email}</span></p>
+    </div>`;
+    try {
+      // const response = await axios.po', {
+      //   bodyHtml,
+      //   email,
+      // });
+      toast.success('Pedido de orçamento enviado com sucesso');
+    } catch (error) {
+      toast.error('Desculpe mas não foi possível enviar sua solicitaçãos');
+    }
+    setDisabledButton(true);
+    setHiddenTotal(false);
+    setShowModalDadosClientePreserva(false);
+    salvaCliente();
+  };
+  const salvaCliente = () => {
+    try {
+      axios
+        .post(`/cliente`, {
+          nome: nomeCliente,
+          data_nascimento: null,
+          celular,
+          email,
+        })
+        .then((response) => {
+          salvaOrcamento(response.data.id);
+        });
+
       setIsLoading(false);
     } catch (error) {
       const status = get(error, 'response.data.status', 0);
@@ -231,121 +264,23 @@ export default function Orcamento({ match }) {
       setIsLoading(false);
     }
   };
-  const handleOnChangeNome = (e) => {
-    setNomeCliente(e.target.value);
-  };
-  const handleOnChangeCelular = (e) => {
-    setCelular(e.target.value);
-  };
-  const handleOnChangeEmail = (e) => {
-    setEmail(e.target.value);
-  };
-  const handleCalcularReserva = (e) => {
-    e.preventDefault();
-    let valor = 0;
-    let diarias = 0;
-    const di = new Date(dataInicial);
-    const df = new Date(dataFinal);
-    diarias = df.getDate() - di.getDate();
-
-    valor = valorDiaria * diarias;
-
-    setValorFinal(valor);
-    console.log(diarias);
-  };
-  const handleTipoPagamento = (e) => {
-    e.target.value === 'Parcelado' && setHiddenParcelas(false);
-    setTipoPagamento(e.target.value);
-  };
-  const handleJurosMaquina = (e) => {
-    listTaxaMaquina.map((dado) => {
-      e.target.value === dado.descricao && setTaxaMaquina(dado.taxa);
-    });
-    setQtdeParcelas(e.target.value);
-  };
-  const handleFinalizarOrcamento = (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const salvaOrcamento = async (idCliente) => {
     try {
-      if (!id) {
+      listQuartosEscolhidos.map((dado) => {
         const response = axios.post('/orcamento', {
-          n_quarto: numeroQuarto,
+          n_quarto: dado.n_quarto,
           cliente_id: idCliente,
-          valor: valorFinal,
-          natureza: tipoPagamento,
-          tipo_quarto: tipoQuarto,
-          parcelas: qtdeParcela,
-          disponivel: false,
-          data_entrada: moment(dataInicial).format(),
-          data_saida: moment(dataFinal).format(),
+          valor: dado.valorReserva,
+          tipo_quarto: dado.tipo,
+          data_entrada: moment(dado.data_entrada).format(),
+          data_saida: moment(dado.data_saida).format(),
         });
-        toast.success('Orçamento finalizado com sucesso');
         console.log(response);
-      } else {
-        const response = axios.put(`/orcamento/${id}`, {
-          n_quarto: numeroQuarto,
-          cliente_id: idCliente,
-          valor: valorFinal,
-          natureza: tipoPagamento,
-          tipo_quarto: tipoQuarto,
-          parcelas: qtdeParcela,
-          disponivel: false,
-          data_entrada: moment(dataInicial).format(),
-          data_saida: moment(dataFinal).format(),
-        });
-        toast.success('Orçamento finalizado com sucesso');
-        console.log(response);
-      }
-      setIsLoading(false);
-    } catch (err) {
-      toast.error('Erro ao fazer o orçamento');
-      console.log(err);
-      setIsLoading(false);
-    }
-  };
-  const handleIdCliente = async (idm) => {
-    try {
-      const response = await axios.get(`/cliente/${idm}`);
-      console.log(response.data);
-      setNomeCliente(response.data.nome);
-      setIdCliente(response.data.id);
-      setShowCliente(false);
-    } catch (e) {
-      toast.error('Condigo não existe');
-      console.log(e);
-    }
-  };
-  const handleBuscaCliente = async () => {
-    setShowCliente(true);
-    console.log('aqui');
-    try {
-      const novaLista = [];
-      const response = await axios.get('/cliente');
-      response.data.map((dados) => {
-        if (
-          String(dados.nome)
-            .toLowerCase()
-            .includes(String(nomeCliente.toLowerCase()))
-        ) {
-          novaLista.push(dados);
-        }
       });
-
-      setListCliente(novaLista);
-      console.log(novaLista);
-    } catch (e) {
-      toast.error('Condigo não existe');
-      console.log(e);
+    } catch (error) {
+      console.log(error);
     }
-  };
-  const handleTipoQuarto = (e) => {
-    const tipo = e.target.value;
-    listTipoQuarto.map((dado) => {
-      if (tipo === dado.descricao) {
-        setValorDiaria(dado.valor);
-      }
-    });
-    setTipoQuarto(tipo);
+    // toast.success('Orçamento finalizado com sucesso');
   };
   const handleQtdeCrianca = (qtde, nQuarto) => {
     const qtc = [];
@@ -358,18 +293,22 @@ export default function Orcamento({ match }) {
       });
     }
     setShowCrianca(true);
+    console.log(qtc);
     setQuantidadeFilhos(qtc);
   };
   const handleIdadeCrianca = (e, quarto) => {
     const aux = [];
-    console.log(quarto);
     quantidadeFilhos.map((dado, index) => {
-      if (dado.id === quarto.id)
+      if (dado.id === quarto.id) {
         aux[index] = { ...quarto, idade: e.target.value };
-      else aux.push(dado);
+        idadeFilhos.push({ ...quarto, idade: e.target.value });
+      } else aux.push(dado);
     });
-    console.log(aux);
     setQuantidadeFilhos(aux);
+    console.log(aux);
+
+    setIdadeFilhos(idadeFilhos);
+    console.log(idadeFilhos);
   };
   const handleSelectQtdeQuartosOrcamento = (e) => {
     setQtdeQuartosOrcamento(e.target.value);
@@ -385,6 +324,8 @@ export default function Orcamento({ match }) {
         checked: false,
       });
     }
+    setHiddenTotal(false);
+    setHiddenFormSelecaoPessoas(false);
     setListQtdeQuartosOrcamento(aux);
   };
   const handleAlteraValorComboboxAdultos = (e, quarto) => {
@@ -411,11 +352,218 @@ export default function Orcamento({ match }) {
     handleQtdeCrianca(e.target.value, quarto.id);
     setListQtdeQuartosOrcamento(aux);
   };
-  const handleDetailQuarto = (quarto) => {};
+  const classificaoQuarto = (quarto) => {
+    setIsLoading(true);
+    const tipos = [];
+    let bebe = false;
+    let quantideCriancas = 0;
+    const adultoTemp = parseInt(quarto.adulto);
+    // apenas 1 adulto ou simples sem crianca
+    if (adultoTemp === 1 && !quarto.crianca) tipos.push('Duplo');
+    // apenas 1 adulto ou simples com crinca
+    else if (adultoTemp === 1 && quarto.crianca) {
+      idadeFilhos.map((idade) => {
+        if (idade.quarto === quarto.id)
+          if (parseInt(idade.idade) === 0) {
+            bebe = true;
+            quantideCriancas++;
+          } else quantideCriancas++;
+      });
+
+      // com 1 adulto 1 crianca
+      if (quantideCriancas === 1) {
+        tipos.push('Duplo');
+        tipos.push('Triplo');
+      }
+      // com 1 adulto 2 crianca
+      else if (quantideCriancas === 2) {
+        tipos.push('Triplo');
+        tipos.push('Quádruplo');
+      }
+      // com 3 adultos apenas um filho bebe
+      else if (quantideCriancas === 3) tipos.push('Quádruplo');
+      else
+        toast.error(
+          'Limite de pessoas excedido aumente a quantidade de quartos'
+        );
+    }
+    // apenas 2 adulto ou simples sem crianca
+    else if (adultoTemp === 2 && !quarto.crianca) {
+      tipos.push('Duplo');
+    }
+    // apenas 2 adulto ou simples com crinca
+    else if (adultoTemp === 2 && quarto.crianca) {
+      idadeFilhos.map((idade) => {
+        if (idade.quarto === quarto.id)
+          if (parseInt(idade.idade) === 0) {
+            bebe = true;
+            quantideCriancas++;
+          } else quantideCriancas++;
+      });
+
+      // com 2 adulto 1 bebe
+      if (quantideCriancas === 1 && bebe) {
+        tipos.push('Duplo');
+        tipos.push('Triplo');
+      }
+      // com 2 adulto 1 crianca
+      else if (quantideCriancas === 1 && !bebe) {
+        tipos.push('Triplo');
+        tipos.push('Quádruplo');
+      }
+      // com 2 adulto 1 bebe e 1 crianca
+      else if (quantideCriancas === 2 && bebe) {
+        tipos.push('Triplo');
+        tipos.push('Quádruplo');
+      }
+      // com 2 adulto 2 crianca
+      else if (quantideCriancas === 2 && !bebe) tipos.push('Quádruplo');
+      else
+        toast.error(
+          'Limite de pessoas excedido aumente a quantidade de quartos'
+        );
+    }
+    // apenas 3 adulto ou simples sem crianca
+    else if (adultoTemp === 3 && !quarto.crianca) {
+      tipos.push('Triplo');
+      tipos.push('Quádruplo');
+    }
+    // apenas 3 adulto ou simples com crinca
+    else if (adultoTemp === 3 && quarto.crianca) {
+      idadeFilhos.map((idade) => {
+        if (idade.quarto === quarto.id)
+          if (parseInt(idade.idade) === 0) {
+            bebe = true;
+            quantideCriancas++;
+          } else quantideCriancas++;
+      });
+
+      // com 3 adulto 1 bebe
+      if (quantideCriancas === 1 && bebe) {
+        tipos.push('Triplo');
+        tipos.push('Quádruplo');
+      }
+      // com 3 adulto 1 crianca
+      else if (quantideCriancas === 1 && !bebe) {
+        tipos.push('Quádruplo');
+        tipos.push('Quíntuplo');
+      }
+      // com 3 adulto 1 bebe e 1 crianca
+      else if (quantideCriancas === 2 && bebe) {
+        tipos.push('Quádruplo');
+        tipos.push('Quíntuplo');
+      }
+      // com 3 adulto 3 crianca
+      else
+        toast.error(
+          'Limite de pessoas excedido aumente a quantidade de quartos'
+        );
+    }
+    // apenas 4 adulto ou simples sem crianca
+    else if (adultoTemp === 4 && !quarto.crianca) {
+      tipos.push('Quádruplo');
+    }
+    // apenas 4 adulto ou simples com crinca
+    else if (adultoTemp === 4 && quarto.crianca) {
+      idadeFilhos.map((idade) => {
+        if (idade.quarto === quarto.id)
+          if (parseInt(idade.idade) === 0) {
+            bebe = true;
+            quantideCriancas++;
+          } else quantideCriancas++;
+      });
+
+      // com 4 adulto 1 bebe
+      if (quantideCriancas === 1 && bebe) {
+        tipos.push('Quádruplo');
+        tipos.push('Quíntuplo');
+      }
+      // com 4 adulto 1 crianca
+      else if (quantideCriancas === 1 && !bebe) tipos.push('Quíntuplo');
+      else
+        toast.error(
+          'Limite de pessoas excedido aumente a quantidade de quartos'
+        );
+    }
+    // outros valores
+    else toast.error('Limite de pessoas');
+
+    setIdadeFilhos([]);
+    handleQuartoDetail({ ...quarto, tipos });
+  };
+  const handleQuartoDetail = async (quarto) => {
+    const novaList = [];
+    console.log(quarto.tipos);
+    listQtdeQuartosOrcamento.map(async (dado) => {
+      if (quarto.id === dado.id) {
+        listTipoQuarto.map((desc) => {
+          quarto.tipos.map((tipo) => {
+            if (desc.nome === tipo) {
+              const va = parseFloat(desc.valor).toFixed(2);
+              const valorReserva = handleCalcularReserva(va);
+              novaList.push({
+                ...dado,
+                valorReserva,
+                tipo: desc.nome,
+                descricao: desc.descricao,
+                escolhido: false,
+                button: 'Escolher',
+              });
+            }
+          });
+        });
+      }
+    });
+    console.log(novaList);
+    setShowCardDetailQuarto(novaList);
+    setIsLoading(false);
+  };
+  const handleEscolhaQuarto = (opcao) => {
+    let novoValor = valorFinal;
+    setHiddenResumoFinal(false);
+
+    if (!opcao.escolhido) {
+      const novaLista = [...listQuartosEscolhidos];
+      novaLista.push(opcao);
+      setListQuartosEscolhidos(novaLista);
+      console.log(novaLista);
+
+      showCardDetailQuarto.map((dado, index) => {
+        if (dado.tipo === opcao.tipo) {
+          showCardDetailQuarto[index] = {
+            ...opcao,
+            button: 'Remover',
+            escolhido: true,
+          };
+          novoValor += opcao.valorReserva;
+        }
+      });
+      setValorFinal(novoValor);
+
+      setShowCardDetailQuarto(showCardDetailQuarto);
+    } else {
+      showCardDetailQuarto.map((dado, index) => {
+        if (dado.tipo === opcao.tipo) {
+          showCardDetailQuarto[index] = {
+            ...opcao,
+            button: 'Escolher',
+            escolhido: false,
+          };
+        }
+        novoValor -= opcao.valorReserva;
+      });
+      setValorFinal(novoValor);
+
+      setShowCardDetailQuarto(showCardDetailQuarto);
+      const aux = listQuartosEscolhidos.indexOf(opcao);
+      const novaListQuartosEscolhidos = [...listQuartosEscolhidos];
+      novaListQuartosEscolhidos.splice(aux, 1);
+      setListQuartosEscolhidos(novaListQuartosEscolhidos);
+    }
+  };
   return (
     <Container>
       <Loading isLoading={isLoading} />
-
       <ModalCrianca
         title="Selecione a(s) idade(s) da(s) criança(s)"
         list={quantidadeFilhos}
@@ -423,34 +571,27 @@ export default function Orcamento({ match }) {
         idadeFilhos
         handleIdadeCrianca={handleIdadeCrianca}
         handleClose={() => setShowCrianca(false)}
-        handleConfirm
         buttonCancel="Cancelar"
         buttonConfirm="Confirmar"
       />
-      <ModalAddCliente
-        title="Cadastro Parcial"
-        handleClose={handleClose}
-        show={show}
+      <ModalDadosClientePreserva
+        title="Formulário de pré reserva"
+        show={showModalDadosClientePreserva}
+        buttonCancel="Cancelar"
+        buttonConfirm="Enviar"
+        handleFunctionConfirm={handleFinalizarOrcamento}
+        handleClose={() => setShowModalDadosClientePreserva(false)}
+        nomeCliente={nomeCliente}
+        celular={celular}
+        email={email}
+        isLoading={isLoadingModal}
         onChangeNome={handleOnChangeNome}
         onChangeCelular={handleOnChangeCelular}
         onChangeEmail={handleOnChangeEmail}
-        buttonCancel="Cancelar"
-        buttonConfirm="Salvar"
-        handleFunctionConfirm={handleFunctionConfirm}
-      />
-      <ModalBuscaCliente
-        title="Selecione o membro"
-        handleClose={() => setShowCliente(false)}
-        show={showCliente}
-        list={listClientes}
-        buttonCancel="Fechar"
-        handleIdCliente={handleIdCliente}
+        disabledButton={disabledButton}
       />
       <Header>
         <h1>Orçamento</h1>
-        <Button variant="success" onClick={visualizarImpressao}>
-          <AiFillPrinter size={40} />
-        </Button>
       </Header>
       <Form>
         <Row>
@@ -493,184 +634,45 @@ export default function Orcamento({ match }) {
           />
         </Row>
       </Form>
-      <Form onSubmit={handleSubmit}>
-        {listQtdeQuartosOrcamento.map((dado) => (
-          <Row key={dado.id}>
-            <strong>Quarto {dado.descricao}</strong>
-            <Col sm={12} md={2} className="my-1">
-              <Label htmlFor="congregacao">
-                Aldultos
-                <select
-                  onChange={(e) => handleAlteraValorComboboxAdultos(e, dado)}
-                  value={dado.adulto}
-                >
-                  <option value="">-</option>
-                  {listAdultos.map((ad, index) => (
-                    <option key={ad.id} value={ad.descricao}>
-                      {ad.descricao}
-                    </option>
-                  ))}
-                </select>
-              </Label>
-            </Col>
-            <Col sm={12} md={2} className="my-1">
-              <Label htmlFor="congregacao">
-                Crianças
-                <select
-                  onChange={(e) => handleAlteraValorComboboxCrianca(e, dado)}
-                  value={dado.crianca}
-                >
-                  <option value="">-</option>
-                  {listCriancas.map((ad, index) => (
-                    <option key={ad.id} value={ad.descricao}>
-                      {ad.descricao}
-                    </option>
-                  ))}
-                </select>
-              </Label>
-            </Col>
-          </Row>
-        ))}
-        <Col
-          style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            marginBottom: '3px',
-          }}
-        >
-          <Button variant="success" type="submit">
-            Velificar disponibilidade <FaSearch />
-          </Button>
-        </Col>
-      </Form>
-
-      <CardDetailQuarto list={listQtdeQuartosOrcamento} />
-      <Row hidden={hidden}>
-        <h3>Quartos Disponíveis</h3>
-        {listQuartos.map((dado) => (
-          <Col key={dado.n_quarto} sm={12} md={4} lg={4} className="my-1">
-            <CardComponent
-              disponibilidade={dado.disponivel}
-              nQuarto={dado.n_quarto}
-              cliente={dado.cliente}
-              entrada={
-                getDataBanco(new Date(dado.data_entrada)) !== 'NaN/NaN/NaN'
-                  ? getDataBanco(new Date(dado.data_entrada))
-                  : ''
-              }
-              saida={
-                getDataBanco(new Date(dado.data_saida)) !== 'NaN/NaN/NaN'
-                  ? getDataBanco(new Date(dado.data_saida))
-                  : ''
-              }
-              onClick={() => {
-                setHiddenForm(false);
-                setHidden(true);
-                setNumeroQuarto(dado.n_quarto);
-              }}
-            />
-          </Col>
-        ))}
-      </Row>
-      <Form onSubmit={handleFinalizarOrcamento} hidden={hiddenForm}>
-        <Row>
-          <Col sm={6} md={2} className="my-1">
-            <Form.Label htmlFor="nQuarto">Nº Quarto</Form.Label>
-            <Form.Control
-              type="text"
-              value={numeroQuarto + 1}
-              onChange={(e) => {
-                setNomeCliente(e.target.value);
-              }}
-            />
-          </Col>
-          <Col sm={6} md={8} className="my-1">
-            <Form.Label htmlFor="nomeCliente">Nome do Cliente</Form.Label>
-            <Form.Control
-              type="text"
-              value={nomeCliente}
-              onChange={(e) => {
-                setNomeCliente(e.target.value);
-              }}
-            />
-          </Col>
-          <Col
-            sm={3}
-            md={2}
-            className="my-1"
-            style={{
-              display: 'flex',
-              alignItems: 'flex-end',
-              justifyContent: 'space-around',
-            }}
-          >
-            <Button
-              onClick={() => handleBuscaCliente()}
-              type="button"
-              value="Buscar"
-              variant="success"
-            >
-              <FaSearch size={16} />
-            </Button>
-            <Button
-              type="button"
-              value="Adicionar"
-              onClick={() => {
-                setIsLoading(true);
-                setShow(true);
-              }}
-              variant="success"
-            >
-              <FaPlus size={16} />
-            </Button>
-          </Col>
-        </Row>
-        <Row>
-          <Col sm={12} md={3} className="my-1">
-            <Label htmlFor="congregacao">
-              Selecione o mês
-              <select onChange={handleTipoQuarto} value={tipoQuarto}>
-                <option value="nada">Selecione o mês</option>
-                {listTipoQuarto.map((dado) => (
-                  <option key={dado.id} value={dado.descricao}>
-                    {dado.descricao}
-                  </option>
-                ))}
-              </select>
-            </Label>
-          </Col>
-          <Col sm={12} md={3} className="my-1">
-            <Form.Label htmlFor="Valor">Valor do diária</Form.Label>
-            <Form.Control
-              type="number"
-              value={valorDiaria}
-              onChange={(e) => {
-                setValorDiaria(e.target.value);
-              }}
-            />
-          </Col>
-          <Col sm={12} md={3} className="my-1">
-            <ComboBox
-              title="Tipo de Pagamento"
-              list={listTiposPagamento}
-              text="Selecione o estado civil"
-              value={tipoPagamento}
-              onChange={(e) => {
-                handleTipoPagamento(e);
-              }}
-            />
-          </Col>
-          <Col sm={12} md={3} className="my-1" hidden={hiddenParcelas}>
-            <ComboBox
-              title="Quantide de Parcelas"
-              list={listTaxaMaquina}
-              text="Selecione o estado civil"
-              value={qtdeParcela}
-              onChange={(e) => {
-                handleJurosMaquina(e);
-              }}
-            />
-          </Col>
+      <section hidden={hiddenTotal}>
+        <Form onSubmit={handleSubmit} hidden={hiddenFormSelecaoPessoas}>
+          {listQtdeQuartosOrcamento.map((dado) => (
+            <Row key={dado.id}>
+              <strong>Quarto {dado.descricao}</strong>
+              <Col sm={12} md={2} className="my-1">
+                <Label htmlFor="congregacao">
+                  Aldultos
+                  <select
+                    onChange={(e) => handleAlteraValorComboboxAdultos(e, dado)}
+                    value={dado.adulto}
+                  >
+                    <option value="">-</option>
+                    {listAdultos.map((ad, index) => (
+                      <option key={ad.id} value={ad.descricao}>
+                        {ad.descricao}
+                      </option>
+                    ))}
+                  </select>
+                </Label>
+              </Col>
+              <Col sm={12} md={2} className="my-1">
+                <Label htmlFor="congregacao">
+                  Crianças
+                  <select
+                    onChange={(e) => handleAlteraValorComboboxCrianca(e, dado)}
+                    value={dado.crianca}
+                  >
+                    <option value="">-</option>
+                    {listCriancas.map((ad, index) => (
+                      <option key={ad.id} value={ad.descricao}>
+                        {ad.descricao}
+                      </option>
+                    ))}
+                  </select>
+                </Label>
+              </Col>
+            </Row>
+          ))}
           <Col
             style={{
               display: 'flex',
@@ -678,47 +680,124 @@ export default function Orcamento({ match }) {
               marginBottom: '3px',
             }}
           >
-            <Button
-              variant="success"
-              type="button"
-              onClick={handleCalcularReserva}
-            >
-              Calcular <FaCalculator />
+            <Button variant="success" type="submit">
+              Verificar disponibilidade <FaSearch />
             </Button>
           </Col>
-        </Row>
-        <Row>
-          <Col sm={12} md={3} className="my-1">
-            <Form.Label htmlFor="Valor">Valor final</Form.Label>
-            <Form.Control
-              type="number"
-              value={valorFinal}
-              onChange={(e) => {
-                setValorFinal(e.target.value);
+        </Form>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'space-around',
+          }}
+          hidden={hiddenButtonGrupSelectQuartoDetail}
+        >
+          {listQtdeQuartosOrcamento.map((radio, idx) => (
+            <Button
+              key={idx}
+              id={`radio-${idx}`}
+              type="button"
+              variant={
+                radioValue === radio.value ? 'success' : 'outline-success'
+              }
+              value={radio.value}
+              onClick={(e) => {
+                classificaoQuarto(radio);
+                setRadioValue(e.currentTarget.value);
               }}
-              disabled
-            />
-          </Col>
-          <Col
-            sm={12}
-            md={3}
-            className="my-1"
-            style={{
-              display: 'flex',
-              alignItems: 'flex-end',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Button
-              variant="success"
-              type="button"
-              onClick={handleFinalizarOrcamento}
+              style={{ margin: 5 }}
             >
-              Reservar
+              Quarto {radio.name}
             </Button>
-          </Col>
-        </Row>
-      </Form>
+          ))}
+        </div>
+        <CardDetailQuarto
+          list={showCardDetailQuarto}
+          listFilhos={idadeFilhos}
+          handleQuartoDetail={classificaoQuarto}
+          quartoDetail={quartoDetail}
+          crianca={criancaDetail}
+          adulto={adultoDetail}
+          tipo={tipoQuarto}
+          descricao={descricao}
+          valor={valorFinal}
+          show={showDetail}
+          handleEscolhaQuarto={handleEscolhaQuarto}
+        />
+        <CardBox hidden={hiddenResumoFinal}>
+          <Row>
+            <Col sm={12} md={9}>
+              <CardHeader>Resumo da Reserva</CardHeader>
+              {listQuartosEscolhidos.map((dado) => (
+                <CardBody key={dado.id}>
+                  <CardDados>
+                    <TextBold>
+                      Quarto:
+                      <span>{dado.name}</span>
+                    </TextBold>
+                  </CardDados>
+                  <CardDados>
+                    <TextBold>
+                      Descrição:
+                      <span>{dado.descricao}</span>
+                    </TextBold>
+                  </CardDados>
+                  <CardDados>
+                    <TextBold>
+                      Adultos:
+                      <span>{dado.adulto}</span>
+                    </TextBold>
+                  </CardDados>
+                  <CardDados>
+                    <TextBold>
+                      Criança:
+                      <span>{dado.crianca}</span>
+                    </TextBold>
+                  </CardDados>
+                  <CardDados>
+                    <TextBold>
+                      Tipo:
+                      <span>{dado.tipo}</span>
+                    </TextBold>
+                  </CardDados>
+                  <CardDados>
+                    <TextBold>
+                      Data Checkin:
+                      <span>{moment(dado.data_entrada).format('L')}</span>
+                    </TextBold>
+                  </CardDados>
+                  <CardDados>
+                    <TextBold>
+                      Data Checkout:
+                      <span>{moment(dado.data_saida).format('L')}</span>
+                    </TextBold>
+                  </CardDados>
+                  <br />
+                </CardBody>
+              ))}
+              <CardHeader>Valor total: {valorFinal}</CardHeader>
+            </Col>
+            <Col
+              sm={12}
+              md={3}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Button
+                variant="success"
+                size="lg"
+                onClick={() => setShowModalDadosClientePreserva(true)}
+              >
+                Finalizar Pré-Reserva
+              </Button>
+            </Col>
+          </Row>
+        </CardBox>
+      </section>
     </Container>
   );
 }

@@ -713,6 +713,12 @@ export default function OrcamentoAberto() {
                   <CardDados>
                     <TextBold>
                       Quarto:
+                      <span>{dado.name}</span>
+                    </TextBold>
+                  </CardDados>
+                  <CardDados>
+                    <TextBold>
+                      Descrição:
                       <span>{dado.descricao}</span>
                     </TextBold>
                   </CardDados>
@@ -738,12 +744,6 @@ export default function OrcamentoAberto() {
                     <TextBold>
                       Data Checkin:
                       <span>{moment(dado.data_entrada).format('L')}</span>
-                    </TextBold>
-                  </CardDados>
-                  <CardDados>
-                    <TextBold>
-                      Data Checkout:
-                      <span>{moment(dado.data_saida).format('L')}</span>
                     </TextBold>
                   </CardDados>
                   <CardDados>

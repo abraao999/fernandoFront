@@ -39,7 +39,7 @@ export default function ModalBuscaCliente({
                   <td>
                     <FaCheck
                       onClick={() => {
-                        handleIdCliente(dado.id);
+                        handleIdCliente(dado);
                       }}
                       size={16}
                     />

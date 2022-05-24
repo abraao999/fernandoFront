@@ -14,7 +14,7 @@ export default function ComboBox({ title, onChange, value, list, disabled }) {
         <option value="nada">{title}</option>
         {list.map((dado) => (
           <option key={dado.id} value={dado.descricao}>
-            {dado.descricao}
+            {dado.nome || dado.descricao}
           </option>
         ))}
       </select>

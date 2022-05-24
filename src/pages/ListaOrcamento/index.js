@@ -247,7 +247,7 @@ export default function ListaOrcamento() {
                       variant="warning"
                       type="button"
                       onClick={(e) => {
-                        history.push(`/orcamento/${dado.id}`);
+                        history.push(`/orcamentoEdit/${dado.id}`);
                       }}
                     >
                       <AiTwotoneEdit size={16} />

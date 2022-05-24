@@ -60,6 +60,7 @@ import Estoque from '../pages/Estoque';
 import Consumo from '../pages/Consumo';
 import TipoQuarto from '../pages/TipoQuarto';
 import OrcamentoAberto from '../pages/OrcamentoAberto';
+import OrcamentoEdit from '../pages/OrcamentoEdit';
 
 export default function Routes() {
   const idFuncao = useSelector((state) => state.auth.user.function_id);
@@ -82,7 +83,11 @@ export default function Routes() {
 
       <MyRoute path="/cadCliente/:id" component={CadCliente} isClosed={false} />
       <MyRoute path="/cadCliente" component={CadCliente} isClosed={false} />
-      <MyRoute path="/orcamento/:id" component={Orcamento} isClosed={false} />
+      <MyRoute
+        path="/orcamentoEdit/:id"
+        component={OrcamentoEdit}
+        isClosed={false}
+      />
       <MyRoute path="/orcamento" component={Orcamento} isClosed={false} />
       <MyRoute
         path="/orcamentoAberto"
